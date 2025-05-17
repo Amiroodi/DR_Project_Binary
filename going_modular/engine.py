@@ -12,6 +12,8 @@ from torchmetrics.classification import BinaryF1Score
 from torch.utils.tensorboard import SummaryWriter
 from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
 
 scalar = torch.amp.GradScaler('cuda', enabled=True)
 
@@ -119,9 +121,6 @@ def test_step(model: torch.nn.Module,
     model.eval() 
 
     total_class_loss = 0
-
-    # correct = 0
-    # total = 0
 
     all_preds = []
     all_targets = []
@@ -306,14 +305,27 @@ def calculate_metrics(y_pred_class, y):
 
     # f1_score = f1(torch.tensor(y_pred_class), torch.tensor(y))
 
+    # for sklearn we should use numpy arrays not torch tensors
     y_pred_class = torch.tensor(y_pred_class).numpy()
     y = torch.tensor(y).numpy()
 
+    accuracy = accuracy_score(y, y_pred_class)
+
+    precision, recall, f1_score, support = precision_recall_fscore_support(y, y_pred_class, average=None)
+
+    print(f'per class scores: precision: {precision} | recall: {recall} | f1_score: {f1_score}')
+
     precision, recall, f1_score, support = precision_recall_fscore_support(y, y_pred_class, average='macro')
-    accuracy = accuracy_score(y_pred_class, y)
 
-    print(f'precision: {precision:.4f} | recall: {recall:.4f} | f1_score: {f1_score:.4f} | accuracy: {accuracy:.4f}')
+    print(f'average scores: precision: {precision} | recall: {recall} | f1_score: {f1_score}')
 
+    print(f'accuracy: {accuracy}')
+
+    cm = confusion_matrix(y, y_pred_class)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+    disp.plot(cmap=plt.cm.Blues)
+    plt.title("Confusion Matrix")
+    plt.show()
 
 
 
