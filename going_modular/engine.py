@@ -14,6 +14,8 @@ from sklearn.metrics import precision_recall_fscore_support
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
+from sklearn.metrics import cohen_kappa_score
+
 
 scalar = torch.amp.GradScaler('cuda', enabled=True)
 
@@ -320,6 +322,10 @@ def calculate_metrics(y_pred_class, y):
     print(f'average scores: precision: {precision} | recall: {recall} | f1_score: {f1_score}')
 
     print(f'accuracy: {accuracy}')
+
+    QWK = cohen_kappa_score(y, y_pred_class, weights='quadratic')
+
+    print('QWK: ', QWK)
 
     cm = confusion_matrix(y, y_pred_class)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)

@@ -257,7 +257,7 @@ def get_augmentation_train_transforms(num_augs, crop_size):
         #     p=1.0
         # ),
         
-        # A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+        A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
         A.ToFloat(),
         ToTensorV2()
     ], seed=33)
