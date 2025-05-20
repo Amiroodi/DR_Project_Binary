@@ -8,9 +8,9 @@ def reg_classify(x, device):
     classified = torch.bucketize(x, bins, right=False)  # right=False ensures correct bin placement
     return classified
 
-class ThreeHeadCNN(nn.Module):
+class OneHeadModel(nn.Module):
     def __init__(self, device, p_dropout):
-        super(ThreeHeadCNN, self).__init__()
+        super(OneHeadModel, self).__init__()
 
         self.device = device
         self.p_dropout = p_dropout
@@ -28,14 +28,14 @@ class ThreeHeadCNN(nn.Module):
         self.batch_norm_1= nn.BatchNorm1d(1280) 
         self.batch_norm_2= nn.BatchNorm1d(1280)
 
-        self.dense1 = nn.Linear(1280 * 2, 512)
+        self.dense1 = nn.Linear(1280 * 2, 128)
 
         # Classification head
         self.classification_head = nn.Sequential(
-            nn.Linear(512, 128),
+            nn.Linear(128, 32),
             nn.ReLU(),
             nn.Dropout(p=self.p_dropout),
-            nn.Linear(128, 1) # 5 output nodes for classification
+            nn.Linear(32, 1) # 5 output nodes for classification
             )
         
         # Apply He initialization to classification_head

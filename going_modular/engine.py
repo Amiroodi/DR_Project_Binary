@@ -23,7 +23,6 @@ def train_step(model: torch.nn.Module,
                dataloader: torch.utils.data.DataLoader, 
                loss_fn_classification: torch.nn.Module,
                optimizer: torch.optim.Optimizer,
-               scheduler: torch.optim.lr_scheduler,
                device: torch.device) -> Tuple[float, float]:
 
     # Put model in train mode
@@ -35,6 +34,10 @@ def train_step(model: torch.nn.Module,
     total = 0
 
     for batch, (X, y) in enumerate(dataloader):
+
+        # 3. Optimizer zero grad
+        optimizer.zero_grad(set_to_none=True)
+
         # Send data to target device
         X, y = X.to(device), y.to(device)
 
@@ -42,15 +45,11 @@ def train_step(model: torch.nn.Module,
 
             class_out, enc_out= model(X)
 
-            loss_classification = loss_fn_classification(class_out, y)
+            loss_classification = loss_fn_classification(class_out.float(), y.float())
     
         scalar.scale(loss_classification).backward()
         scalar.step(optimizer)
-        scheduler.step()
         scalar.update()
-
-        # 3. Optimizer zero grad
-        optimizer.zero_grad(set_to_none=True)
 
         # Calculate and accumulate accuracy metric across all batches for classification head
         total_class_loss += loss_classification.item()
@@ -91,9 +90,8 @@ def val_step(model: torch.nn.Module,
             class_out, enc_out = model(X)
         
             # 2. Calculate and accumulate loss
-            loss_classification = loss_fn_classification(class_out, y)
+            loss_classification = loss_fn_classification(class_out.float(), y.float())
                 
-
             total_class_loss += loss_classification.item()
             y_pred_class = torch.round(torch.sigmoid(class_out))
 
@@ -137,7 +135,7 @@ def test_step(model: torch.nn.Module,
             class_out, enc_out = model(X)
 
             # 2. Calculate and accumulate loss
-            loss_classification = loss_fn_classification(class_out, y)
+            loss_classification = loss_fn_classification(class_out.float(), y.float())
 
             # Calculate and accumulate accuracy metric across all batches for classification head
             total_class_loss += loss_classification.item()
@@ -194,7 +192,6 @@ def train(
             dataloader=train_dataloader,
             loss_fn_classification=loss_fn_classification,
             optimizer=optimizer,
-            scheduler=scheduler,
             device=device)
 
         loss_classification_val, acc_classification_val = val_step(
@@ -203,14 +200,16 @@ def train(
             loss_fn_classification=loss_fn_classification,
             device=device)
         
+        scheduler.step()
+        print(f"Epoch {epoch}, Learning Rate: {scheduler.get_last_lr()[0]}")
+        
         # Print out what's happening
-        if epoch % 5 == 0:
-            print(
-                f"Epoch: {epoch}\n"
-                f"loss_classification_train: {loss_classification_train:.4f} | "
-                f"loss_classification_validation: {loss_classification_val:.4f} | "
-                f"acc_classification_validation: {acc_classification_val:.4f}"
-                )
+        print(
+            # f"Epoch: {epoch}\n"
+            f"loss_classification_train: {loss_classification_train:.4f} | "
+            f"loss_classification_validation: {loss_classification_val:.4f} | "
+            f"acc_classification_validation: {acc_classification_val:.4f}"
+            )
 
         # Update results dictionary
         train_results["loss_classification_train"].append(loss_classification_train)
@@ -252,7 +251,6 @@ def pre_train(
         dataloader=train_dataloader,
         loss_fn_classification=loss_fn_classification,
         optimizer=optimizer,
-        scheduler=scheduler,
         device=device)
 
         loss_classification_val, acc_classification_val = val_step(
@@ -261,13 +259,15 @@ def pre_train(
         loss_fn_classification=loss_fn_classification,
         device=device)
 
+        scheduler.step()
+        print(f"Epoch {epoch}, Learning Rate: {scheduler.get_last_lr()[0]}")
+
         
         # Print out what's happening
-        if epoch % 4 == 0:
-            print(
-                f"Epoch: {epoch}\n"
-                f"loss_classification_train: {loss_classification_train:.4f} | loss_classification_val: {loss_classification_val:.4f} | acc_classification_val: {acc_classification_val}"
-                )
+        print(
+            # f"Epoch: {epoch}\n"
+            f"loss_classification_train: {loss_classification_train:.4f} | loss_classification_val: {loss_classification_val:.4f} | acc_classification_val: {acc_classification_val}"
+            )
 
         # Update results dictionary
         train_results["loss_classification_train"].append(loss_classification_train)
