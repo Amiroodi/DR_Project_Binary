@@ -16,8 +16,8 @@ class OneHeadModel(nn.Module):
         self.p_dropout = p_dropout
 
         # Load EfficientNet encoder
-        weights = torchvision.models.EfficientNet_B1_Weights.DEFAULT
-        efficientNet = torchvision.models.efficientnet_b1(weights=weights)
+        weights = torchvision.models.EfficientNet_B4_Weights.DEFAULT
+        efficientNet = torchvision.models.efficientnet_b4(weights=weights)
         self.encoder = efficientNet.features
 
         # Pooling layers
@@ -25,10 +25,10 @@ class OneHeadModel(nn.Module):
         self.global_avg_pool = nn.AdaptiveAvgPool2d(1)
 
         # Fully connected layers
-        self.batch_norm_1= nn.BatchNorm1d(1280) 
-        self.batch_norm_2= nn.BatchNorm1d(1280)
+        self.batch_norm_1= nn.BatchNorm1d(1792) 
+        self.batch_norm_2= nn.BatchNorm1d(1792)
 
-        self.dense1 = nn.Linear(1280 * 2, 128)
+        self.dense1 = nn.Linear(1792 * 2, 128)
 
         # Classification head
         self.classification_head = nn.Sequential(

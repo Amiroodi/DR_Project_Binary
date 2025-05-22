@@ -19,12 +19,14 @@ APTOS_19_train_image_folder = "../APTOS/resized_train_19"
 APTOS_19_train_csv_file = "../APTOS/labels/trainLabels19.csv"  
 
 APTOS_15_train_image_folder = "../APTOS/resized_train_15"
-APTOS_15_train_csv_file = "../APTOS/labels/trainLabels15.csv" 
+# APTOS_15_train_csv_file = "../APTOS/labels/trainLabels15.csv" 
+APTOS_15_train_csv_file = "../APTOS/labels/down_train_15.csv"  
+
 
 APTOS_15_test_image_folder = "../APTOS/resized_test_15"
 APTOS_15_test_csv_file = "../APTOS/labels/testLabels15.csv"  
 
-NUM_WORKERS = 8
+NUM_WORKERS = 4
 
 class LoadLabels(Dataset):
     def __init__(self, csv_file):
@@ -68,23 +70,26 @@ class LoadDataset(Dataset):
             
         return image, label
     
-def LoadDataset_train_val_test_split(transform, shrink_size, train_size=0.7, val_size=0.15, test_size=0.15):
+def LoadDataset_train_val_test_split(transform, shrink_size, train_size=0.75, val_size=0.10, test_size=0.15):
     train_dataset_1 = LoadDataset(APTOS_19_train_image_folder, APTOS_19_train_csv_file, transform=transform)
+    train_dataset_2 = LoadDataset(APTOS_15_train_image_folder, APTOS_15_train_csv_file, transform=transform)
+
     # train_dataset_2 = LoadDataset(MESSIDOR_image_folder, MESSIDOR_csv_file, transform=transform)
     # train_dataset_3 = LoadDataset(IDRID_image_folder, IDRID_csv_file, transform=transform)
 
     # combined_dataset = ConcatDataset([train_dataset_1, train_dataset_2, train_dataset_3])
-    combined_dataset = ConcatDataset([train_dataset_1])
+    combined_dataset = ConcatDataset([train_dataset_1, train_dataset_2])
 
     # combined_dataset = train_dataset_1
 
     # StratifiedShuffleSplit is slow for combined_dataset because augmentations are applied, so we load labels seperately
     labels_dataset_1 = LoadLabels(APTOS_19_train_csv_file)
+    labels_dataset_2 = LoadLabels(APTOS_15_train_csv_file)
     # labels_dataset_2 = LoadLabels(MESSIDOR_csv_file)
     # labels_dataset_3 = LoadLabels(IDRID_csv_file)
 
     # combined_labels_dataset = ConcatDataset([labels_dataset_1, labels_dataset_2, labels_dataset_3])
-    combined_labels_dataset = ConcatDataset([labels_dataset_1])
+    combined_labels_dataset = ConcatDataset([labels_dataset_1, labels_dataset_2])
 
     # combined_labels_dataset = labels_dataset_1
 

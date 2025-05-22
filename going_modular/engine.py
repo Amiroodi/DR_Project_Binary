@@ -23,7 +23,8 @@ def train_step(model: torch.nn.Module,
                dataloader: torch.utils.data.DataLoader, 
                loss_fn_classification: torch.nn.Module,
                optimizer: torch.optim.Optimizer,
-               device: torch.device) -> Tuple[float, float]:
+               device: torch.device,
+               th=0.1) -> Tuple[float, float]:
 
     # Put model in train mode
     model.train()
@@ -53,7 +54,7 @@ def train_step(model: torch.nn.Module,
 
         # Calculate and accumulate accuracy metric across all batches for classification head
         total_class_loss += loss_classification.item()
-        y_pred_class = torch.round(torch.sigmoid(class_out))
+        y_pred_class = torch.round(torch.sigmoid(class_out) + th)
 
         total += y.size(0)
         correct += (y_pred_class == y).sum().item()
@@ -68,7 +69,8 @@ def train_step(model: torch.nn.Module,
 def val_step(model: torch.nn.Module, 
               dataloader: torch.utils.data.DataLoader, 
               loss_fn_classification: torch.nn.Module,
-              device: torch.device) -> Tuple[float, float]:
+              device: torch.device,
+              th=0.1) -> Tuple[float, float]:
 
     # Put model in eval mode
     model.eval() 
@@ -93,7 +95,7 @@ def val_step(model: torch.nn.Module,
             loss_classification = loss_fn_classification(class_out.float(), y.float())
                 
             total_class_loss += loss_classification.item()
-            y_pred_class = torch.round(torch.sigmoid(class_out))
+            y_pred_class = torch.round(torch.sigmoid(class_out) + th)
 
             total += y.size(0)
             correct += (y_pred_class == y).sum().item()
@@ -115,7 +117,8 @@ def val_step(model: torch.nn.Module,
 def test_step(model: torch.nn.Module, 
               dataloader: torch.utils.data.DataLoader, 
               loss_fn_classification: torch.nn.Module,
-              device: torch.device) -> Tuple[float, float]:
+              device: torch.device,
+              th=0.1) -> Tuple[float, float]:
 
     # Put model in eval mode
     model.eval() 
@@ -139,7 +142,7 @@ def test_step(model: torch.nn.Module,
 
             # Calculate and accumulate accuracy metric across all batches for classification head
             total_class_loss += loss_classification.item()
-            y_pred_class = torch.round(torch.sigmoid(class_out))
+            y_pred_class = torch.round(torch.sigmoid(class_out) + th)
 
             # total += y.size(0)
             # correct += (y_pred_class == y).sum().item()
@@ -275,7 +278,6 @@ def pre_train(
 
         val_results["loss_classification_val"].append(loss_classification_val)
         val_results["acc_classification_val"].append(acc_classification_val)
-
 
     return train_results, val_results
 
