@@ -5,8 +5,8 @@ import albumentations as A
 import cv2
 
 APTOS_train_image_folder = "../APTOS/resized_train_15"
-# APTOS_train_csv_file = "../APTOS/labels/trainLabels15.csv"  
-APTOS_train_csv_file = "../APTOS/labels/down_train_15.csv"  
+APTOS_train_csv_file = "../APTOS/labels/trainLabels15.csv"  
+# APTOS_train_csv_file = "../APTOS/labels/down_train_15.csv"  
 
 
 # APTOS_test_image_folder = "../APTOS/resized_test_15"
@@ -30,6 +30,7 @@ class LoadDataset(Dataset):
         # Get image filename and label from the DataFrame
         img_name = self.df.iloc[idx, 0]  # Assuming first column is filename
         label = self.df.iloc[idx, 1]  # Assuming second column is label (0-4)
+        
         if label >=1: label = 1.0
 
         # Load image

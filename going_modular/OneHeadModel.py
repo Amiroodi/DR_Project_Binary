@@ -28,11 +28,11 @@ class OneHeadModel(nn.Module):
         self.batch_norm_1= nn.BatchNorm1d(1792) 
         self.batch_norm_2= nn.BatchNorm1d(1792)
 
-        self.dense1 = nn.Linear(1792 * 2, 128)
+        self.dense1 = nn.Linear(1792 * 2, 512)
 
         # Classification head
         self.classification_head = nn.Sequential(
-            nn.Linear(128, 32),
+            nn.Linear(512, 32),
             nn.ReLU(),
             nn.Dropout(p=self.p_dropout),
             nn.Linear(32, 1) # 5 output nodes for classification

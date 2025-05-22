@@ -5,7 +5,6 @@ import albumentations as A
 import cv2
 from sklearn.model_selection import KFold
 from torch.utils.data import ConcatDataset
-from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import train_test_split
 
 
@@ -50,17 +49,17 @@ class LoadDataset(Dataset):
         # Get image filename and label from the DataFrame
         img_name = self.df.iloc[idx, 0]  # Assuming first column is filename
         label = self.df.iloc[idx, 1]  # Assuming second column is label (0-4)
-        if label >=1: label = 1.0
+
+        if label >= 1: label = 1.0
 
         # Load image
-        if self.image_folder == MESSIDOR_image_folder:
+        if self.image_folder == MESSIDOR_image_folder: # messidor has the .jpg name in its files
             img_path = os.path.join(self.image_folder, img_name)
         else:
             img_path = os.path.join(self.image_folder, img_name) + '.jpg'
 
         image = cv2.imread(img_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        # image = cv2.addWeighted(image,4, cv2.GaussianBlur(image , (0,0) , 30) ,-4 ,128)
 
         # Apply transformations
         if self.transform:
@@ -76,7 +75,6 @@ def LoadDataset_train_val_test_split(transform, shrink_size, train_size=0.7, val
     # combined_dataset = ConcatDataset([train_dataset_1, train_dataset_2, train_dataset_3])
     combined_dataset = ConcatDataset([train_dataset_1])
 
-    # combined_dataset = train_dataset_1
 
     # StratifiedShuffleSplit is slow for combined_dataset because augmentations are applied, so we load labels seperately
     labels_dataset_1 = LoadLabels(APTOS_19_train_csv_file)
