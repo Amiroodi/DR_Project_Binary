@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 IDRID_image_folder = "../IDRID/Imagenes/Imagenes" 
 IDRID_csv_file = "../IDRID/idrid_labels.csv"  
 
-MESSIDOR_image_folder = "../MESSIDOR/images"
+MESSIDOR_image_folder = "../MESSIDOR/messidor-2/messidor-2/preprocess"
 MESSIDOR_csv_file = "../MESSIDOR/messidor_data.csv"
 
 APTOS_19_train_image_folder = "../APTOS/resized_train_19"
