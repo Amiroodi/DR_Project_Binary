@@ -16,8 +16,8 @@ class OneHeadModel(nn.Module):
         self.p_dropout = p_dropout
 
         # Load EfficientNet encoder
-        weights = torchvision.models.EfficientNet_B4_Weights.DEFAULT
-        efficientNet = torchvision.models.efficientnet_b4(weights=weights)
+        weights = torchvision.models.EfficientNet_B1_Weights.DEFAULT
+        efficientNet = torchvision.models.efficientnet_b1(weights=weights)
         self.encoder = efficientNet.features
 
         # Pooling layers
@@ -25,17 +25,21 @@ class OneHeadModel(nn.Module):
         self.global_avg_pool = nn.AdaptiveAvgPool2d(1)
 
         # Fully connected layers
-        self.batch_norm_1= nn.BatchNorm1d(1792) 
-        self.batch_norm_2= nn.BatchNorm1d(1792)
+        self.batch_norm_1= nn.BatchNorm1d(1280) 
+        self.batch_norm_2= nn.BatchNorm1d(1280)
 
-        self.dense1 = nn.Linear(1792 * 2, 512)
+        self.dense1 = nn.Sequential(
+            nn.Linear(1280 * 2, 512),
+            nn.ReLU(),
+            nn.Dropout(p=self.p_dropout)
+        )
 
         # Classification head
         self.classification_head = nn.Sequential(
             nn.Linear(512, 32),
             nn.ReLU(),
             nn.Dropout(p=self.p_dropout),
-            nn.Linear(32, 1) # 5 output nodes for classification
+            nn.Linear(32, 5) # 5 output nodes for classification
             )
         
         # Apply He initialization to classification_head
@@ -66,11 +70,11 @@ class OneHeadModel(nn.Module):
         # Concatenate
         x1 = self.batch_norm_1(max_pooled)
         x2 = self.batch_norm_2(avg_pooled)
-        x = torch.concat([x1, x2], dim=1)
-        x = torch.relu(self.dense1(x))
 
         # enc_out for visualizing data with t-SNE
-        enc_out = x
+        enc_out = torch.concat([x1, x2], dim=1)
+
+        x = self.dense1(enc_out)
 
         # Classification branch
         class_out = self.classification_head(x).squeeze(dim=1)
