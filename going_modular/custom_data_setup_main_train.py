@@ -6,6 +6,7 @@ import cv2
 from sklearn.model_selection import KFold
 from torch.utils.data import ConcatDataset
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedShuffleSplit
 
 
 IDRID_image_folder = "../IDRID/Imagenes/Imagenes" 
@@ -14,13 +15,13 @@ IDRID_csv_file = "../IDRID/idrid_labels.csv"
 MESSIDOR_image_folder = "../MESSIDOR/messidor-2/messidor-2/preprocess"
 MESSIDOR_csv_file = "../MESSIDOR/messidor_data.csv"
 
-APTOS_19_train_image_folder = "../APTOS/resized_train_19"
+APTOS_19_train_image_folder = "../APTOS/resized train 19"
 APTOS_19_train_csv_file = "../APTOS/labels/trainLabels19.csv"  
 
-APTOS_15_train_image_folder = "../APTOS/resized_train_15"
+APTOS_15_train_image_folder = "../APTOS/resized train 15"
 APTOS_15_train_csv_file = "../APTOS/labels/trainLabels15.csv" 
 
-APTOS_15_test_image_folder = "../APTOS/resized_test_15"
+APTOS_15_test_image_folder = "../APTOS/resized test 15"
 APTOS_15_test_csv_file = "../APTOS/labels/testLabels15.csv"  
 
 NUM_WORKERS = 8
@@ -51,6 +52,7 @@ class LoadDataset(Dataset):
         label = self.df.iloc[idx, 1]  # Assuming second column is label (0-4)
 
         if label >= 1: label = 1.0
+        else: label = 0.0
 
         # Load image
         if self.image_folder == MESSIDOR_image_folder: # messidor has the .jpg name in its files
@@ -67,24 +69,40 @@ class LoadDataset(Dataset):
             
         return image, label
     
-def LoadDataset_train_val_test_split(transform, shrink_size, train_size=0.7, val_size=0.15, test_size=0.15):
-    train_dataset_1 = LoadDataset(APTOS_19_train_image_folder, APTOS_19_train_csv_file, transform=transform)
-    # train_dataset_2 = LoadDataset(MESSIDOR_image_folder, MESSIDOR_csv_file, transform=transform)
-    # train_dataset_3 = LoadDataset(IDRID_image_folder, IDRID_csv_file, transform=transform)
+def LoadDataset_train_val_test_split(transform, shrink_size, train_size=0.8, test_size=0.2):
+    train_dataset_1_orig = LoadDataset(APTOS_19_train_image_folder, APTOS_19_train_csv_file, transform=transform)
+    labels_dataset_1 = LoadLabels(APTOS_19_train_csv_file)
 
-    # combined_dataset = ConcatDataset([train_dataset_1, train_dataset_2, train_dataset_3])
-    combined_dataset = ConcatDataset([train_dataset_1])
+    labels_dataset_1 = [labels_dataset_1[i] for i in range(len(labels_dataset_1))]  # assuming (image, label)
 
+    aptos_train_idx, aptos_test_idx, aptos_train_labels, aptos_test_labels = train_test_split(
+        list(range(len(train_dataset_1_orig))),
+        labels_dataset_1,
+        train_size=train_size,
+        stratify=labels_dataset_1,
+        random_state=33
+    )
+
+
+    train_dataset_1 = Subset(train_dataset_1_orig, aptos_train_idx)
+    test_dataset = Subset(train_dataset_1_orig, aptos_test_idx)
+
+
+    train_dataset_2 = LoadDataset(MESSIDOR_image_folder, MESSIDOR_csv_file, transform=transform)
+    train_dataset_3 = LoadDataset(IDRID_image_folder, IDRID_csv_file, transform=transform)
+
+    combined_dataset = ConcatDataset([train_dataset_1, train_dataset_2, train_dataset_3])
+    # combined_dataset = ConcatDataset([train_dataset_1])
 
     # StratifiedShuffleSplit is slow for combined_dataset because augmentations are applied, so we load labels seperately
     labels_dataset_1 = LoadLabels(APTOS_19_train_csv_file)
-    # labels_dataset_2 = LoadLabels(MESSIDOR_csv_file)
-    # labels_dataset_3 = LoadLabels(IDRID_csv_file)
+    labels_dataset_1 = Subset(labels_dataset_1, aptos_train_idx)
+    
+    labels_dataset_2 = LoadLabels(MESSIDOR_csv_file)
+    labels_dataset_3 = LoadLabels(IDRID_csv_file)
 
-    # combined_labels_dataset = ConcatDataset([labels_dataset_1, labels_dataset_2, labels_dataset_3])
-    combined_labels_dataset = ConcatDataset([labels_dataset_1])
-
-    # combined_labels_dataset = labels_dataset_1
+    combined_labels_dataset = ConcatDataset([labels_dataset_1, labels_dataset_2, labels_dataset_3])
+    # combined_labels_dataset = ConcatDataset([labels_dataset_1])
 
     # Shrinking dataset size for test purposes
     if shrink_size is not None:
@@ -95,28 +113,19 @@ def LoadDataset_train_val_test_split(transform, shrink_size, train_size=0.7, val
 
     # Step 3: Create stratified train, validation, and test splits
     # First, split into train and temp (val + test)
-    train_idx, temp_idx, train_labels, temp_labels = train_test_split(
+    train_idx, val_idx, train_labels, val_labels = train_test_split(
         range(len(combined_dataset)),
         labels,
-        train_size=train_size,
+        train_size=0.9,
         stratify=labels,
-        random_state=33
-    )
-
-    # Adjust val_size for the second split (val_size / (val_size + test_size))
-    relative_val_size = val_size / (val_size + test_size)
-    val_idx, test_idx, _, _ = train_test_split(
-        temp_idx,
-        temp_labels,
-        train_size=relative_val_size,
-        stratify=temp_labels,
         random_state=33
     )
 
     # Step 4: Create Subset datasets for train, validation, and test
     train_dataset = Subset(combined_dataset, train_idx)
     val_dataset = Subset(combined_dataset, val_idx)
-    test_dataset = Subset(combined_dataset, test_idx)
+
+    # print(len(train_dataset), len(val_dataset), len(test_dataset))
 
     return train_dataset, val_dataset, test_dataset
 

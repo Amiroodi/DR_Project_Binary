@@ -29,14 +29,14 @@ class OneHeadModel(nn.Module):
         self.batch_norm_2= nn.BatchNorm1d(1280)
 
         self.dense1 = nn.Sequential(
-            nn.Linear(1280 * 2, 512),
+            nn.Linear(1280 * 2, 128),
             nn.ReLU(),
             nn.Dropout(p=self.p_dropout)
         )
 
         # Classification head
         self.classification_head = nn.Sequential(
-            nn.Linear(512, 32),
+            nn.Linear(128, 32),
             nn.ReLU(),
             nn.Dropout(p=self.p_dropout),
             nn.Linear(32, 5) # 5 output nodes for classification
@@ -47,10 +47,10 @@ class OneHeadModel(nn.Module):
         
     def _initialize_weights(self):
         
-        # Initialize dense1
-        nn.init.kaiming_normal_(self.dense1.weight, mode='fan_in', nonlinearity='relu')
-        if self.dense1.bias is not None:
-            nn.init.zeros_(self.dense1.bias)
+    #     # Initialize dense1
+    #     nn.init.kaiming_normal_(self.dense1.Linear.weight, mode='fan_in', nonlinearity='relu')
+    #     if self.dense1.Linear.bias is not None:
+    #         nn.init.zeros_(self.dense1.bias)
 
         for module in self.classification_head:
             if isinstance(module, nn.Linear):
