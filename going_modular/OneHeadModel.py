@@ -29,6 +29,7 @@ class OneHeadModel(nn.Module):
         self.batch_norm_2= nn.BatchNorm1d(1280)
 
         self.dense1 = nn.Sequential(
+            nn.Dropout(p=self.p_dropout),
             nn.Linear(1280 * 2, 128),
             nn.ReLU(),
             nn.Dropout(p=self.p_dropout)
@@ -38,8 +39,7 @@ class OneHeadModel(nn.Module):
         self.classification_head = nn.Sequential(
             nn.Linear(128, 32),
             nn.ReLU(),
-            nn.Dropout(p=self.p_dropout),
-            nn.Linear(32, 5) # 5 output nodes for classification
+            nn.Linear(32, 1) # 1 output nodes for classification
             )
         
         # Apply He initialization to classification_head
